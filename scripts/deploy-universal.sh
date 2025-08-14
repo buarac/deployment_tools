@@ -22,9 +22,20 @@ if [[ ! "$ENV" =~ ^(dev|staging|prod)$ ]]; then
     exit 1
 fi
 
+# Charger les variables d'environnement du projet si disponibles
+cd "$PROJECT_DIR"
+if [ -f ".env" ]; then
+    echo "📋 Chargement des variables depuis .env..."
+    set -a  # Auto-export des variables
+    source .env
+    set +a  # Désactiver auto-export
+fi
+
 # Variables dynamiques
 APP_NAME=${APP_NAME:-"app-$ENV"}
 DEPLOY_USER=${DEPLOY_USER:-$(whoami)}
+# Pour PM2, utiliser APP_VERSION du .env si disponible, sinon le paramètre VERSION
+PM2_VERSION=${APP_VERSION:-$VERSION}
 
 echo "🚀 Déploiement $ENV - Version: $VERSION"
 echo "📁 Projet: $PROJECT_DIR"
@@ -56,7 +67,7 @@ deploy_dev() {
     
     # Démarrer avec PM2
     echo "🌟 Démarrage avec PM2..."
-    APP_NAME="$APP_NAME" PROJECT_DIR="$PROJECT_DIR" APP_VERSION="$VERSION" \
+    APP_NAME="$APP_NAME" PROJECT_DIR="$PROJECT_DIR" APP_VERSION="$PM2_VERSION" \
         pm2 start "$DEPLOY_TOOLS_DIR/environments/dev/pm2.config.js"
 }
 
@@ -107,7 +118,7 @@ deploy_remote() {
     
     # Démarrer l'application
     echo "🌟 Démarrage avec PM2..."
-    APP_NAME="$APP_NAME" PROJECT_DIR="$PROJECT_DIR" APP_VERSION="$VERSION" \
+    APP_NAME="$APP_NAME" PROJECT_DIR="$PROJECT_DIR" APP_VERSION="$PM2_VERSION" \
         pm2 start "$DEPLOY_TOOLS_DIR/environments/$env_name/pm2.config.js"
 }
 
